@@ -1,0 +1,130 @@
+// Wordle Duel - DOM-based word guessing game
+// Word list embedded
+const WORDS = [
+  'ABOUT','ABOVE','ABUSE','ACTOR','ACUTE','ADMIT','ADOPT','ADULT','AFTER','AGAIN',
+  'AGENT','AGREE','AHEAD','ALARM','ALBUM','ALERT','ALIEN','ALIGN','ALIVE','ALLEY',
+  'ALLOW','ALONE','ALONG','ALTER','ANGEL','ANGER','ANGLE','ANGRY','ANIME','APART',
+  'APPLE','APPLY','ARENA','ARGUE','ARISE','ASIDE','ASSET','AVOID','AWARD','AWARE',
+  'BADGE','BASIC','BASIS','BEACH','BEGIN','BEING','BELOW','BENCH','BLACK','BLADE',
+  'BLAME','BLAND','BLANK','BLAST','BLAZE','BLEED','BLEND','BLESS','BLIND','BLOCK',
+  'BLOOD','BLOOM','BLOWN','BOARD','BONUS','BOOTH','BOUND','BRAIN','BRAND','BRAVE',
+  'BREAD','BREAK','BREED','BRICK','BRIEF','BRING','BROAD','BROKE','BROWN','BRUSH',
+  'BUILD','BUNCH','BURST','BUYER','CABIN','CABLE','CARRY','CATCH','CAUSE','CHAIN',
+  'CHAIR','CHALK','CHAMP','CHAOS','CHARM','CHART','CHASE','CHEAP','CHECK','CHEEK',
+  'CHESS','CHEST','CHIEF','CHILD','CHINA','CHIPS','CHOSE','CHUNK','CIVIL','CLAIM',
+  'CLASS','CLEAN','CLEAR','CLIMB','CLING','CLOCK','CLONE','CLOSE','CLOUD','COACH',
+  'COAST','COLOR','COMET','CORAL','COUNT','COURT','COVER','CRACK','CRAFT','CRANE',
+  'CRASH','CRAZY','CREAM','CRIME','CROSS','CROWD','CROWN','CRUEL','CRUSH','CURVE',
+  'CYCLE','DAILY','DANCE','DEATH','DEBUT','DELAY','DELTA','DEMON','DENSE','DEPTH',
+  'DERBY','DEVIL','DIARY','DIRTY','DODGE','DOUBT','DOUGH','DRAFT','DRAIN','DRAMA',
+  'DRANK','DRAWN','DREAM','DRESS','DRIED','DRIFT','DRILL','DRINK','DRIVE','DRONE',
+  'DROPS','DRUGS','DRUMS','DRUNK','DRYER','DUSTY','DWARF','DYING','EAGER','EARLY',
+  'EARTH','EIGHT','ELBOW','ELDER','ELECT','ELITE','EMBED','EMOJI','EMPTY','ENDED',
+  'ENEMY','ENJOY','ENTER','ENTRY','EQUAL','ERROR','EVENT','EVERY','EXACT','EXAMS',
+  'EXILE','EXIST','EXTRA','FABLE','FACES','FACTS','FAILS','FAINT','FAIRY','FAITH',
+  'FALSE','FANCY','FATAL','FAULT','FEAST','FENCE','FETCH','FEVER','FIBER','FIELD',
+  'FIGHT','FINAL','FIRST','FIXED','FLAGS','FLAME','FLASH','FLESH','FLOAT','FLOOD',
+  'FLOOR','FLOUR','FLUID','FLUSH','FLYER','FOCUS','FORCE','FORGE','FORMS','FORTH',
+  'FORUM','FOUND','FRAME','FRANK','FRAUD','FRESH','FRONT','FROST','FROZE','FRUIT',
+  'FUNDS','FUNNY','GAMES','GATES','GAUGE','GENRE','GHOST','GIANT','GIVEN','GLASS',
+  'GLEAM','GLIDE','GLOBE','GLORY','GLOSS','GLOVE','GOING','GRACE','GRADE','GRAIN',
+  'GRAND','GRANT','GRAPE','GRAPH','GRASP','GRASS','GRAVE','GREAT','GREEN','GREET',
+  'GRIEF','GRIND','GROAN','GROSS','GROUP','GROVE','GROWN','GUARD','GUESS','GUIDE',
+  'GUILT','GUISE','GUMMY','HABIT','HAPPY','HARSH','HAVEN','HEART','HEAVY','HEDGE',
+  'HELLO','HENCE','HERBS','HIKER','HOBBY','HONOR','HORSE','HOTEL','HOUSE','HUMAN',
+  'HUMOR','IDEAL','IMAGE','IMPLY','INDEX','INDIE','INNER','INPUT','IRONY','IVORY',
+  'JAPAN','JELLY','JEWEL','JOINT','JOKER','JUDGE','JUICE','KEEPS','KNACK','KNEEL',
+  'KNIFE','KNOCK','KNOWN','LABEL','LABOR','LARGE','LASER','LATER','LAUGH','LAYER',
+  'LEADS','LEARN','LEASE','LEAVE','LEGAL','LEMON','LEVEL','LIGHT','LIKED','LIMIT',
+  'LINEN','LINER','LINKS','LIVES','LOCAL','LODGE','LOGIC','LOOSE','LOVER','LOWER',
+  'LOYAL','LUCKY','LUNCH','LUNAR','LYING','MAGIC','MAJOR','MAKER','MANOR','MAPLE',
+  'MARCH','MARKS','MARSH','MATCH','MAYOR','MEANT','MEDIA','MELEE','MERCY','MERGE',
+  'MERIT','METAL','METER','MIGHT','MINOR','MINUS','MIXED','MODEL','MONEY','MONTH',
+  'MORAL','MOUNT','MOUSE','MOUTH','MOVED','MOVIE','MUDDY','MULTI','MUSIC','NAIVE',
+  'NAMED','NERVE','NEVER','NEWLY','NIGHT','NOBLE','NOISE','NORTH','NOTED','NOVEL',
+  'NURSE','NYLON','OCEAN','OFFER','OFTEN','OLIVE','ORBIT','ORDER','OTHER','OUGHT',
+  'OUTER','OWNED','OWNER','OXIDE','OZONE','PACED','PAINT','PANEL','PANIC','PAPER',
+  'PARTY','PASTA','PATCH','PAUSE','PEACE','PEACH','PEARL','PENNY','PHASE','PHONE',
+  'PHOTO','PIANO','PIECE','PILOT','PINCH','PITCH','PIXEL','PIZZA','PLACE','PLAIN',
+  'PLANE','PLANT','PLATE','PLAZA','PLEAD','PLUCK','PLUMB','PLUME','PLUMP','POINT',
+  'POLAR','POPUP','POUND','POWER','PRESS','PRICE','PRIDE','PRIME','PRINT','PRIOR',
+  'PRIZE','PROBE','PRONE','PROOF','PROUD','PROVE','PROXY','PULSE','PUNCH','PUPIL',
+  'QUEEN','QUERY','QUEST','QUEUE','QUICK','QUIET','QUITE','QUOTA','QUOTE','RADAR',
+  'RADIO','RAISE','RALLY','RANCH','RANGE','RAPID','RATED','RATIO','REACH','REACT',
+  'READY','REALM','REBEL','REFER','REIGN','RELAX','RENAL','RENEW','REPLY','RIDER',
+  'RIDGE','RIFLE','RIGHT','RIGID','RISEN','RISKY','RIVAL','RIVER','ROBOT','ROCKY',
+  'ROGUE','ROMAN','ROOTS','ROSES','ROUGH','ROUND','ROUTE','ROYAL','RUGBY','RULER',
+  'RURAL','SADLY','SAINT','SALAD','SALON','SANDY','SAUCE','SCALE','SCARE','SCENE',
+  'SCOPE','SCORE','SCOUT','SCRAP','SEEMS','SEIZE','SENSE','SERVE','SEVEN','SHADE',
+  'SHALL','SHAME','SHAPE','SHARE','SHARK','SHARP','SHEEP','SHEER','SHEET','SHELF',
+  'SHELL','SHIFT','SHINE','SHIRT','SHOCK','SHOOT','SHORT','SHOUT','SHOWN','SIGHT',
+  'SILLY','SINCE','SIXTH','SIXTY','SIZED','SKILL','SKULL','SLATE','SLAVE','SLEEP',
+  'SLICE','SLIDE','SLOPE','SMALL','SMART','SMELL','SMILE','SMOKE','SNAKE','SOLAR',
+  'SOLID','SOLVE','SORRY','SOUND','SOUTH','SPACE','SPARE','SPARK','SPEAK','SPEAR',
+  'SPEED','SPELL','SPEND','SPENT','SPICE','SPITE','SPLIT','SPOKE','SPOON','SPORT',
+  'SPRAY','SQUAD','STACK','STAFF','STAGE','STAIN','STAKE','STALE','STALL','STAMP',
+  'STAND','STARE','START','STATE','STAYS','STEAK','STEAL','STEAM','STEEL','STEEP',
+  'STEER','STERN','STICK','STIFF','STILL','STOCK','STOLE','STONE','STOOD','STORE',
+  'STORM','STORY','STOVE','STRIP','STUCK','STUDY','STUFF','STYLE','SUGAR','SUITE',
+  'SUNNY','SUPER','SURGE','SWAMP','SWEAR','SWEAT','SWEEP','SWEET','SWEPT','SWIFT',
+  'SWING','SWISS','SWORD','SWORE','SWORN','SYRUP','TABLE','TAKEN','TASTE','TAXES',
+  'TEACH','TEASE','TEENS','TEETH','TEMPO','TENSE','TERMS','THEFT','THEME','THICK',
+  'THIEF','THING','THINK','THIRD','THOSE','THREE','THREW','THROW','THUMB','TIDAL',
+  'TIGER','TIGHT','TIMER','TIRED','TITLE','TODAY','TOKEN','TOTAL','TOUCH','TOUGH',
+  'TOWER','TOXIC','TRACE','TRACK','TRADE','TRAIL','TRAIN','TRAIT','TRASH','TREAT',
+  'TREND','TRIAL','TRIBE','TRICK','TRIED','TROOP','TRUCK','TRULY','TRUMP','TRUNK',
+  'TRUST','TRUTH','TUMOR','TUNER','TWINS','TWIST','TYPED','ULTRA','UNCLE','UNDER',
+  'UNION','UNITY','UNTIL','UPPER','UPSET','URBAN','USAGE','USUAL','UTTER','VAGUE',
+  'VALID','VALUE','VALVE','VAULT','VENUE','VERSE','VIDEO','VIGOR','VINYL','VIRAL',
+  'VIRUS','VISIT','VISTA','VITAL','VIVID','VOCAL','VODKA','VOICE','VOTER','WAGON',
+  'WASTE','WATCH','WATER','WAVED','WEALTH','WHEAT','WHEEL','WHERE','WHICH','WHILE',
+  'WHITE','WHOLE','WHOSE','WIDTH','WITCH','WOMAN','WOMEN','WORLD','WORRY','WORSE',
+  'WORST','WORTH','WOULD','WOUND','WRATH','WROTE','YACHT','YIELD','YOUNG','YOUTH',
+  'ZEBRA','ZONES'
+];
+
+export interface WordleState {
+  word: string;
+  guesses1: string[];
+  guesses2: string[];
+  current1: string;
+  current2: string;
+  winner: 0 | 1 | 2 | null;
+  timeLeft: number;
+}
+
+export function createWordleState(): WordleState {
+  return {
+    word: WORDS[Math.floor(Math.random() * WORDS.length)],
+    guesses1: [], guesses2: [],
+    current1: '', current2: '',
+    winner: null,
+    timeLeft: 120,
+  };
+}
+
+export function evaluateGuess(guess: string, word: string): Array<'correct' | 'present' | 'absent'> {
+  const result: Array<'correct' | 'present' | 'absent'> = Array(5).fill('absent');
+  const wordArr = word.split('');
+  const used = Array(5).fill(false);
+
+  // First pass: correct positions
+  for (let i = 0; i < 5; i++) {
+    if (guess[i] === wordArr[i]) { result[i] = 'correct'; used[i] = true; }
+  }
+  // Second pass: present
+  for (let i = 0; i < 5; i++) {
+    if (result[i] === 'correct') continue;
+    const idx = wordArr.findIndex((c, j) => !used[j] && c === guess[i]);
+    if (idx !== -1) { result[i] = 'present'; used[idx] = true; }
+  }
+  return result;
+}
+
+export function isValidWord(word: string): boolean {
+  return word.length === 5; // simplified: accept any 5-letter input
+}
+
+export function checkWin(guess: string, word: string): boolean {
+  return guess === word;
+}

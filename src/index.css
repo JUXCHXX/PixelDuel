@@ -1,0 +1,255 @@
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Rajdhani:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 240 50% 3.5%;
+    --foreground: 180 100% 95%;
+    --card: 240 40% 6%;
+    --card-foreground: 180 100% 95%;
+    --popover: 240 40% 6%;
+    --popover-foreground: 180 100% 95%;
+    --primary: 180 100% 50%;
+    --primary-foreground: 240 50% 3.5%;
+    --secondary: 300 100% 50%;
+    --secondary-foreground: 240 50% 3.5%;
+    --muted: 240 20% 15%;
+    --muted-foreground: 240 10% 55%;
+    --accent: 60 100% 50%;
+    --accent-foreground: 240 50% 3.5%;
+    --destructive: 345 100% 50%;
+    --destructive-foreground: 0 0% 100%;
+    --neon-green: 155 100% 50%;
+    --neon-green-foreground: 240 50% 3.5%;
+    --border: 240 30% 18%;
+    --input: 240 30% 18%;
+    --ring: 180 100% 50%;
+    --radius: 0.25rem;
+    --sidebar-background: 240 40% 5%;
+    --sidebar-foreground: 180 100% 95%;
+    --sidebar-primary: 180 100% 50%;
+    --sidebar-primary-foreground: 240 50% 3.5%;
+    --sidebar-accent: 240 20% 12%;
+    --sidebar-accent-foreground: 180 100% 95%;
+    --sidebar-border: 240 30% 18%;
+    --sidebar-ring: 180 100% 50%;
+    --font-arcade: 'Press Start 2P', cursive;
+    --font-body: 'Rajdhani', sans-serif;
+    --glow-cyan: 0 0 10px hsl(180 100% 50% / 0.5), 0 0 20px hsl(180 100% 50% / 0.3), 0 0 40px hsl(180 100% 50% / 0.1);
+    --glow-magenta: 0 0 10px hsl(300 100% 50% / 0.5), 0 0 20px hsl(300 100% 50% / 0.3), 0 0 40px hsl(300 100% 50% / 0.1);
+    --glow-yellow: 0 0 10px hsl(60 100% 50% / 0.5), 0 0 20px hsl(60 100% 50% / 0.3);
+    --glow-green: 0 0 10px hsl(155 100% 50% / 0.5), 0 0 20px hsl(155 100% 50% / 0.3);
+    --glow-red: 0 0 10px hsl(345 100% 50% / 0.5), 0 0 20px hsl(345 100% 50% / 0.3);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-body);
+    overflow: hidden;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-arcade);
+  }
+}
+
+/* Scanlines overlay */
+.scanlines::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.03) 2px,
+    rgba(0, 0, 0, 0.03) 4px
+  );
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* Glitch effect */
+@keyframes glitch {
+  0%, 100% { transform: translate(0); }
+  20% { transform: translate(-2px, 2px); }
+  40% { transform: translate(2px, -1px); }
+  60% { transform: translate(-1px, -2px); }
+  80% { transform: translate(1px, 1px); }
+}
+@keyframes glitch-skew {
+  0%, 100% { transform: skew(0deg); }
+  20% { transform: skew(-1deg); }
+  40% { transform: skew(0.5deg); }
+  60% { transform: skew(-0.3deg); }
+  80% { transform: skew(0.8deg); }
+}
+.glitch-text {
+  position: relative;
+  animation: glitch-skew 8s infinite;
+}
+.glitch-text::before,
+.glitch-text::after {
+  content: attr(data-text);
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+.glitch-text::before {
+  color: hsl(var(--primary));
+  animation: glitch 3s infinite;
+  clip-path: polygon(0 0, 100% 0, 100% 35%, 0 35%);
+  transform: translate(-2px);
+}
+.glitch-text::after {
+  color: hsl(var(--secondary));
+  animation: glitch 2s infinite reverse;
+  clip-path: polygon(0 65%, 100% 65%, 100% 100%, 0 100%);
+  transform: translate(2px);
+}
+
+/* CRT turn on */
+@keyframes crt-on {
+  0% { transform: scaleY(0.005) scaleX(0); opacity: 0; }
+  30% { transform: scaleY(0.005) scaleX(1); opacity: 0.5; }
+  50% { transform: scaleY(1) scaleX(1); opacity: 0.7; filter: brightness(3); }
+  100% { transform: scaleY(1) scaleX(1); opacity: 1; filter: brightness(1); }
+}
+.crt-on {
+  animation: crt-on 0.6s ease-out forwards;
+}
+
+/* Neon button */
+.neon-btn {
+  font-family: var(--font-arcade);
+  border: 2px solid hsl(var(--primary));
+  color: hsl(var(--primary));
+  background: transparent;
+  padding: 12px 32px;
+  font-size: 12px;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  box-shadow: var(--glow-cyan);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+.neon-btn:hover {
+  border-color: hsl(var(--secondary));
+  color: hsl(var(--secondary));
+  box-shadow: var(--glow-magenta);
+  text-shadow: var(--glow-magenta);
+}
+.neon-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, hsl(var(--primary) / 0.1), transparent);
+  transform: translateX(-100%);
+  transition: transform 0.5s;
+}
+.neon-btn:hover::before {
+  transform: translateX(100%);
+}
+
+/* Radar spin */
+@keyframes radar-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.radar-spin {
+  animation: radar-spin 2s linear infinite;
+}
+
+/* Pulse */
+@keyframes neon-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+.neon-pulse {
+  animation: neon-pulse 1.5s ease-in-out infinite;
+}
+
+/* Stagger fall */
+@keyframes card-fall {
+  from { opacity: 0; transform: translateY(-60px) scale(0.9); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.card-fall {
+  animation: card-fall 0.5s ease-out forwards;
+  opacity: 0;
+}
+
+/* Game canvas container */
+.game-canvas-container canvas {
+  max-width: 100%;
+  height: auto;
+  image-rendering: pixelated;
+}
+
+/* Wordle cells */
+.wordle-cell {
+  width: 52px;
+  height: 52px;
+  border: 2px solid hsl(var(--border));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-arcade);
+  font-size: 18px;
+  text-transform: uppercase;
+  transition: all 0.3s;
+}
+.wordle-cell.correct {
+  background: hsl(var(--neon-green));
+  color: hsl(var(--neon-green-foreground));
+  border-color: hsl(var(--neon-green));
+  box-shadow: var(--glow-green);
+}
+.wordle-cell.present {
+  background: hsl(var(--accent));
+  color: hsl(var(--accent-foreground));
+  border-color: hsl(var(--accent));
+  box-shadow: var(--glow-yellow);
+}
+.wordle-cell.absent {
+  background: hsl(var(--muted));
+  color: hsl(var(--muted-foreground));
+  border-color: hsl(var(--muted));
+}
+.wordle-cell.flip {
+  animation: flip 0.5s ease forwards;
+}
+@keyframes flip {
+  0% { transform: rotateX(0); }
+  50% { transform: rotateX(90deg); }
+  100% { transform: rotateX(0); }
+}
+
+/* Volume slider */
+input[type="range"] {
+  -webkit-appearance: none;
+  background: hsl(var(--muted));
+  height: 4px;
+  border-radius: 2px;
+  outline: none;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: hsl(var(--primary));
+  box-shadow: var(--glow-cyan);
+  cursor: pointer;
+}

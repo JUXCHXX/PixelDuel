@@ -1,0 +1,18 @@
+{
+  "rules": {
+    "sessions": {
+      "$roomCode": {
+        ".read": true,
+        ".write": true,
+        ".validate": "newData.exists()"
+      }
+    },
+    "presence": {
+      "$uid": {
+        ".read": true,
+        ".write": "$uid === auth.uid"
+      }
+    }
+  }
+}
+
