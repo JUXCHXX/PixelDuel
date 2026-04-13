@@ -8,188 +8,153 @@ interface GamepadControlsProps {
 
 const GamepadControls: React.FC<GamepadControlsProps> = ({ gameType, onKeyDown, onKeyUp }) => {
   const [activeKeys, setActiveKeys] = useState<Set<string>>(new Set());
-  const joystickRef = useRef<HTMLDivElement>(null);
   const [joystickPos, setJoystickPos] = useState({ x: 0, y: 0 });
-  const touchIdRef = useRef<number | null>(null);
+  const joystickRef = useRef<HTMLDivElement>(null);
+  const activeKeysRef = useRef<Set<string>>(new Set());
+  const currentTouchRef = useRef<number | null>(null);
 
-  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  // Detectar si es móvil
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+    navigator.userAgent
+  );
 
   if (!isMobile) return null;
 
-  // Actualizar keys activas
-  const updateActiveKey = (key: string, isActive: boolean) => {
-    setActiveKeys(prev => {
-      const newSet = new Set(prev);
-      if (isActive) {
-        newSet.add(key);
+  // Actualizar una key
+  const updateKey = (key: string, isActive: boolean) => {
+    if (isActive) {
+      if (!activeKeysRef.current.has(key)) {
+        activeKeysRef.current.add(key);
+        setActiveKeys(new Set(activeKeysRef.current));
         onKeyDown(key);
-      } else {
-        newSet.delete(key);
+      }
+    } else {
+      if (activeKeysRef.current.has(key)) {
+        activeKeysRef.current.delete(key);
+        setActiveKeys(new Set(activeKeysRef.current));
         onKeyUp(key);
       }
-      return newSet;
-    });
+    }
   };
 
-  // Joystick handling
-  const handleJoystickStart = (e: React.TouchEvent | React.MouseEvent) => {
-    const container = joystickRef.current;
-    if (!container) return;
+  // Limpiar todas las teclas
+  const clearAllKeys = () => {
+    activeKeysRef.current.forEach((key) => {
+      onKeyUp(key);
+    });
+    activeKeysRef.current.clear();
+    setActiveKeys(new Set());
+  };
 
-    // Para touch, obtener el touch ID
-    if ('touches' in e) {
-      touchIdRef.current = e.touches[0].identifier;
+  // ===== JOYSTICK =====
+  const handleJoystickStart = (e: React.TouchEvent | React.MouseEvent) => {
+    const isTouch = 'touches' in e;
+    if (isTouch && (e as React.TouchEvent).touches.length > 0) {
+      currentTouchRef.current = (e as React.TouchEvent).touches[0].identifier;
     }
 
     const handleMove = (moveEvent: TouchEvent | MouseEvent) => {
-      const container = joystickRef.current;
-      if (!container) return;
+      if (!joystickRef.current) return;
 
-      // Validar que es el mismo touch (para múltiples touches)
-      if ('touches' in moveEvent && touchIdRef.current !== null) {
-        let touchFound = false;
-        for (let i = 0; i < moveEvent.touches.length; i++) {
-          if (moveEvent.touches[i].identifier === touchIdRef.current) {
-            touchFound = true;
-            break;
-          }
-        }
-        if (!touchFound) return;
+      // Validar que es el mismo touch
+      if (moveEvent instanceof TouchEvent && currentTouchRef.current !== null) {
+        const touch = Array.from(moveEvent.touches).find(
+          (t) => t.identifier === currentTouchRef.current
+        );
+        if (!touch) return;
       }
 
-      const rect = container.getBoundingClientRect();
+      const rect = joystickRef.current.getBoundingClientRect();
       const centerX = rect.width / 2;
       const centerY = rect.height / 2;
 
-      const clientX = 'touches' in moveEvent ? moveEvent.touches[0].clientX : (moveEvent as MouseEvent).clientX;
-      const clientY = 'touches' in moveEvent ? moveEvent.touches[0].clientY : (moveEvent as MouseEvent).clientY;
+      const clientX =
+        moveEvent instanceof TouchEvent
+          ? moveEvent.touches[0]?.clientX ?? 0
+          : moveEvent.clientX;
+      const clientY =
+        moveEvent instanceof TouchEvent
+          ? moveEvent.touches[0]?.clientY ?? 0
+          : moveEvent.clientY;
 
-      const x = clientX - rect.left - centerX;
-      const y = clientY - rect.top - centerY;
+      let x = clientX - rect.left - centerX;
+      let y = clientY - rect.top - centerY;
       const distance = Math.sqrt(x * x + y * y);
       const maxDistance = 40;
 
-      let constrainedX = x;
-      let constrainedY = y;
-
       if (distance > maxDistance) {
         const angle = Math.atan2(y, x);
-        constrainedX = Math.cos(angle) * maxDistance;
-        constrainedY = Math.sin(angle) * maxDistance;
+        x = Math.cos(angle) * maxDistance;
+        y = Math.sin(angle) * maxDistance;
       }
 
-      setJoystickPos({ x: constrainedX, y: constrainedY });
+      setJoystickPos({ x, y });
 
-      // Determinar dirección
-      const angle = Math.atan2(constrainedY, constrainedX) * (180 / Math.PI);
-      let newDirection = '';
+      // Detectar dirección
+      const angle = Math.atan2(y, x) * (180 / Math.PI);
+      let direction = '';
 
-      if (distance > 10) {
-        // Dead zone de 10px
+      if (distance > 15) {
+        // Dead zone
         if (angle > -45 && angle <= 45) {
-          newDirection = 'd'; // Right
+          direction = 'd'; // Right
         } else if (angle > 45 && angle <= 135) {
-          newDirection = 's'; // Down
+          direction = 's'; // Down
         } else if (angle > 135 || angle <= -135) {
-          newDirection = 'a'; // Left
+          direction = 'a'; // Left
         } else {
-          newDirection = 'w'; // Up
+          direction = 'w'; // Up
         }
       }
 
-      // Actualizar keys activas
-      setActiveKeys(prev => {
-        const newSet = new Set(prev);
-        const directionKeys = ['w', 'a', 's', 'd'];
-
-        // Remover direcciones anteriores
-        directionKeys.forEach(key => {
-          if (newSet.has(key) && key !== newDirection) {
-            newSet.delete(key);
-            onKeyUp(key);
-          }
-        });
-
-        // Agregar nueva dirección
-        if (newDirection && !newSet.has(newDirection)) {
-          newSet.add(newDirection);
-          onKeyDown(newDirection);
-        }
-
-        return newSet;
+      // Actualizar keys
+      ['w', 'a', 's', 'd'].forEach((key) => {
+        updateKey(key, key === direction);
       });
     };
 
     const handleEnd = () => {
-      touchIdRef.current = null;
+      currentTouchRef.current = null;
       setJoystickPos({ x: 0, y: 0 });
+      ['w', 'a', 's', 'd'].forEach((key) => updateKey(key, false));
 
-      // Remover todos los keys de dirección
-      setActiveKeys(prev => {
-        const newSet = new Set(prev);
-        ['w', 'a', 's', 'd'].forEach(key => {
-          if (newSet.has(key)) {
-            newSet.delete(key);
-            onKeyUp(key);
-          }
-        });
-        return newSet;
-      });
-
-      document.removeEventListener('mousemove', handleMove as any);
+      document.removeEventListener('mousemove', handleMove);
+      document.removeEventListener('touchmove', handleMove);
       document.removeEventListener('mouseup', handleEnd);
-      document.removeEventListener('touchmove', handleMove as any);
       document.removeEventListener('touchend', handleEnd);
     };
 
-    document.addEventListener('mousemove', handleMove as any);
+    document.addEventListener('mousemove', handleMove);
+    document.addEventListener('touchmove', handleMove, { passive: false });
     document.addEventListener('mouseup', handleEnd);
-    document.addEventListener('touchmove', handleMove as any, { passive: false });
     document.addEventListener('touchend', handleEnd);
   };
 
-  // Botones de acción
-  const handleButtonDown = (key: string) => {
-    updateActiveKey(key, true);
-  };
-
-  const handleButtonUp = (key: string) => {
-    updateActiveKey(key, false);
-  };
-
-  // Track which button is currently pressed for global touch end
-  const buttonPressedRef = useRef<string | null>(null);
-
-  useEffect(() => {
-    const handleDocumentTouchEnd = () => {
-      if (buttonPressedRef.current) {
-        handleButtonUp(buttonPressedRef.current);
-        buttonPressedRef.current = null;
-      }
-    };
-
-    document.addEventListener('touchend', handleDocumentTouchEnd);
-    return () => {
-      document.removeEventListener('touchend', handleDocumentTouchEnd);
-    };
-  }, []);
-
+  // ===== ACTION BUTTONS =====
   const createButtonHandlers = (key: string) => ({
-    onMouseDown: () => handleButtonDown(key),
-    onMouseUp: () => handleButtonUp(key),
+    onMouseDown: () => updateKey(key, true),
+    onMouseUp: () => updateKey(key, false),
     onTouchStart: (e: React.TouchEvent) => {
       e.preventDefault();
-      buttonPressedRef.current = key;
-      handleButtonDown(key);
+      updateKey(key, true);
     },
     onTouchEnd: (e: React.TouchEvent) => {
       e.preventDefault();
-    }
+      updateKey(key, false);
+    },
+    onMouseLeave: () => {
+      // Si sale sin soltar, liberar
+      if (activeKeysRef.current.has(key)) {
+        updateKey(key, false);
+      }
+    },
   });
 
   const renderActionButtons = () => {
     switch (gameType) {
       case 'pong':
+      case 'snake':
+      case 'racing':
         return (
           <div className="flex flex-col gap-2">
             <button
@@ -243,18 +208,11 @@ const GamepadControls: React.FC<GamepadControlsProps> = ({ gameType, onKeyDown, 
           </button>
         );
 
-      case 'racing':
+      case 'wordle':
         return (
-          <button
-            {...createButtonHandlers('w')}
-            className={`w-12 h-12 rounded-lg font-arcade text-xs font-bold transition-all ${
-              activeKeys.has('w')
-                ? 'bg-red-400 text-black shadow-lg shadow-red-400'
-                : 'bg-red-900 text-red-300 border-2 border-red-400'
-            }`}
-          >
-            GAS
-          </button>
+          <div className="text-xs text-cyan-300 text-center">
+            <p>Use teclado virtual de dispositivo</p>
+          </div>
         );
 
       default:
@@ -264,13 +222,14 @@ const GamepadControls: React.FC<GamepadControlsProps> = ({ gameType, onKeyDown, 
 
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-black/95 border-t-2 border-cyan-500 p-4 backdrop-blur z-50">
-      <div className="max-w-4xl mx-auto h-32 flex items-center justify-between px-4">
+      <div className="max-w-4xl mx-auto h-32 flex items-center justify-between px-4 gap-8">
         {/* Joystick */}
         <div
           ref={joystickRef}
           onMouseDown={handleJoystickStart}
           onTouchStart={handleJoystickStart}
-          className="relative w-32 h-32 bg-gray-900 border-2 border-cyan-400 rounded-full flex items-center justify-center cursor-grab active:cursor-grabbing touch-none"
+          className="relative w-32 h-32 bg-gray-900 border-2 border-cyan-400 rounded-full flex items-center justify-center cursor-grab active:cursor-grabbing flex-shrink-0"
+          style={{ touchAction: 'none' }}
         >
           {/* Outer circle */}
           <div className="absolute w-28 h-28 border border-cyan-400/30 rounded-full"></div>
@@ -280,7 +239,7 @@ const GamepadControls: React.FC<GamepadControlsProps> = ({ gameType, onKeyDown, 
             className="absolute w-10 h-10 bg-gradient-to-br from-cyan-400 to-cyan-600 rounded-full shadow-lg shadow-cyan-400/50 transition-transform"
             style={{
               transform: `translate(${joystickPos.x}px, ${joystickPos.y}px)`,
-              pointerEvents: 'none'
+              pointerEvents: 'none',
             }}
           ></div>
 
@@ -294,14 +253,14 @@ const GamepadControls: React.FC<GamepadControlsProps> = ({ gameType, onKeyDown, 
         </div>
 
         {/* Action buttons */}
-        <div className="flex items-center justify-center gap-4">
+        <div className="flex items-center justify-center gap-4 flex-1">
           {renderActionButtons()}
         </div>
 
         {/* Info */}
-        <div className="text-center">
+        <div className="text-center flex-shrink-0">
           <p className="font-arcade text-xs text-cyan-400 mb-2">MOBILE</p>
-          <p className="font-arcade text-[10px] text-cyan-300">JOYSTICK + ACTION</p>
+          <p className="font-arcade text-[10px] text-cyan-300">CONTROLES</p>
         </div>
       </div>
     </div>
