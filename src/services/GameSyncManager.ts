@@ -85,6 +85,20 @@ export class GameSyncManager {
     }
   }
 
+  static async updateSelectedGame(roomCode: string, gameId: string): Promise<void> {
+    try {
+      const sessionRef = ref(database, `rooms/${roomCode}`);
+      await update(sessionRef, {
+        selectedGame: gameId,
+        gameStartedAt: Date.now()
+      });
+      console.log(`Game selected: ${gameId}`);
+    } catch (error) {
+      console.error('Error updating selected game:', error);
+      throw error;
+    }
+  }
+
   static async endGameSession(roomCode: string): Promise<void> {
     try {
       const sessionRef = ref(database, `rooms/${roomCode}`);
@@ -94,4 +108,3 @@ export class GameSyncManager {
     }
   }
 }
-

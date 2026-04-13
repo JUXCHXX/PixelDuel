@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import ParticlesBg from '../components/ParticlesBg';
 import GameSelector from '../components/GameSelector';
@@ -17,6 +17,7 @@ import { soundManager } from '../engine/SoundManager';
 import { useAuth } from '../context/AuthContext';
 import { PresenceManager } from '../services/PresenceManager';
 import { AuthManager } from '../services/AuthManager';
+import { GameSyncManager } from '../services/GameSyncManager';
 
 type Screen = 'menu' | 'auth' | 'online-lobby' | 'profile' | 'select' | 'select-online' | 'waiting-for-game' | 'waiting-for-invite-accept' | 'join-with-link' | 'connecting-online' | 'playing' | 'records';
 
@@ -42,9 +43,31 @@ const Index: React.FC<IndexProps> = ({ isJoiningWithLink = false }) => {
   const [sentInviteId, setSentInviteId] = useState<string | null>(null);
   const [sentTargetUsername, setSentTargetUsername] = useState('');
   const [sentTargetNumber, setSentTargetNumber] = useState(0);
+  const gameListenerRef = useRef<(() => void) | null>(null);
+
+  // Listen for game selection when guest is waiting
+  useEffect(() => {
+    if (screen === 'waiting-for-game' && onlineRoomCode && !isHost) {
+      gameListenerRef.current = GameSyncManager.listenToGameSession(onlineRoomCode, (sessionData) => {
+        if (sessionData.selectedGame) {
+          console.log('GUEST: Juego seleccionado por HOST:', sessionData.selectedGame);
+          setSelectedGame(sessionData.selectedGame as GameId);
+          setWinner(null);
+          soundManager.gameStart();
+          setScreen('playing');
+        }
+      });
+
+      return () => {
+        if (gameListenerRef.current) {
+          gameListenerRef.current();
+        }
+      };
+    }
+  }, [screen, onlineRoomCode, isHost]);
 
   useEffect(() => {
-    if (!authLoading && !user && screen === 'menu') {
+    if (!authLoading && !user && screen !== 'menu' && screen !== 'records') {
       // User can browse menu without login
     }
   }, [user, authLoading, screen]);
@@ -81,6 +104,12 @@ const Index: React.FC<IndexProps> = ({ isJoiningWithLink = false }) => {
   }, [screen, selectedGame, user, profile]);
 
   const goToMenu = () => {
+    // Clean up any active listeners
+    if (gameListenerRef.current) {
+      gameListenerRef.current();
+      gameListenerRef.current = null;
+    }
+
     setScreen('menu');
     setSelectedGame(null);
     setWinner(null);
@@ -99,6 +128,16 @@ const Index: React.FC<IndexProps> = ({ isJoiningWithLink = false }) => {
     setSelectedGame(game);
     setWinner(null);
     soundManager.gameStart();
+
+    // If this is an online game and player is host, save game selection to Firebase
+    if (gameMode === 'online' && isHost && onlineRoomCode) {
+      try {
+        await GameSyncManager.updateSelectedGame(onlineRoomCode, game);
+      } catch (error) {
+        console.error('Error saving game selection:', error);
+      }
+    }
+
     setScreen('playing');
   };
 

@@ -157,16 +157,43 @@ const GamepadControls: React.FC<GamepadControlsProps> = ({ gameType, onKeyDown, 
     updateActiveKey(key, false);
   };
 
+  // Track which button is currently pressed for global touch end
+  const buttonPressedRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    const handleDocumentTouchEnd = () => {
+      if (buttonPressedRef.current) {
+        handleButtonUp(buttonPressedRef.current);
+        buttonPressedRef.current = null;
+      }
+    };
+
+    document.addEventListener('touchend', handleDocumentTouchEnd);
+    return () => {
+      document.removeEventListener('touchend', handleDocumentTouchEnd);
+    };
+  }, []);
+
+  const createButtonHandlers = (key: string) => ({
+    onMouseDown: () => handleButtonDown(key),
+    onMouseUp: () => handleButtonUp(key),
+    onTouchStart: (e: React.TouchEvent) => {
+      e.preventDefault();
+      buttonPressedRef.current = key;
+      handleButtonDown(key);
+    },
+    onTouchEnd: (e: React.TouchEvent) => {
+      e.preventDefault();
+    }
+  });
+
   const renderActionButtons = () => {
     switch (gameType) {
       case 'pong':
         return (
           <div className="flex flex-col gap-2">
             <button
-              onMouseDown={() => handleButtonDown('w')}
-              onMouseUp={() => handleButtonUp('w')}
-              onTouchStart={() => handleButtonDown('w')}
-              onTouchEnd={() => handleButtonUp('w')}
+              {...createButtonHandlers('w')}
               className={`w-12 h-12 rounded-lg font-arcade text-sm font-bold transition-all ${
                 activeKeys.has('w')
                   ? 'bg-cyan-400 text-black shadow-lg shadow-cyan-400'
@@ -176,10 +203,7 @@ const GamepadControls: React.FC<GamepadControlsProps> = ({ gameType, onKeyDown, 
               ▲
             </button>
             <button
-              onMouseDown={() => handleButtonDown('s')}
-              onMouseUp={() => handleButtonUp('s')}
-              onTouchStart={() => handleButtonDown('s')}
-              onTouchEnd={() => handleButtonUp('s')}
+              {...createButtonHandlers('s')}
               className={`w-12 h-12 rounded-lg font-arcade text-sm font-bold transition-all ${
                 activeKeys.has('s')
                   ? 'bg-cyan-400 text-black shadow-lg shadow-cyan-400'
@@ -194,10 +218,7 @@ const GamepadControls: React.FC<GamepadControlsProps> = ({ gameType, onKeyDown, 
       case 'bomberman':
         return (
           <button
-            onMouseDown={() => handleButtonDown(' ')}
-            onMouseUp={() => handleButtonUp(' ')}
-            onTouchStart={() => handleButtonDown(' ')}
-            onTouchEnd={() => handleButtonUp(' ')}
+            {...createButtonHandlers(' ')}
             className={`w-16 h-16 rounded-full font-arcade text-2xl font-bold transition-all ${
               activeKeys.has(' ')
                 ? 'bg-orange-400 text-black shadow-lg shadow-orange-400'
@@ -211,10 +232,7 @@ const GamepadControls: React.FC<GamepadControlsProps> = ({ gameType, onKeyDown, 
       case 'tetris':
         return (
           <button
-            onMouseDown={() => handleButtonDown('w')}
-            onMouseUp={() => handleButtonUp('w')}
-            onTouchStart={() => handleButtonDown('w')}
-            onTouchEnd={() => handleButtonUp('w')}
+            {...createButtonHandlers('w')}
             className={`w-12 h-12 rounded-lg font-arcade text-sm font-bold transition-all ${
               activeKeys.has('w')
                 ? 'bg-magenta-400 text-black shadow-lg shadow-magenta-400'
@@ -228,10 +246,7 @@ const GamepadControls: React.FC<GamepadControlsProps> = ({ gameType, onKeyDown, 
       case 'racing':
         return (
           <button
-            onMouseDown={() => handleButtonDown('w')}
-            onMouseUp={() => handleButtonUp('w')}
-            onTouchStart={() => handleButtonDown('w')}
-            onTouchEnd={() => handleButtonUp('w')}
+            {...createButtonHandlers('w')}
             className={`w-12 h-12 rounded-lg font-arcade text-xs font-bold transition-all ${
               activeKeys.has('w')
                 ? 'bg-red-400 text-black shadow-lg shadow-red-400'
